@@ -16,12 +16,11 @@ from styxdefs import Execution, InputPathType, Metadata, OutputPathType, Runner
 
 def _singularity_mount(host_path: str, container_path: str, readonly: bool) -> str:
     """Construct Singularity mount argument."""
-    host_path = host_path.replace('"', r"\"")
-    container_path = container_path.replace('"', r"\"")
-    host_path = host_path.replace("\\", "\\\\")
-    container_path = container_path.replace("\\", "\\\\")
-    readonly_str = ",readonly" if readonly else ""
-    return f"type=bind,source={host_path},target={container_path}{readonly_str}"
+    # Check for illegal characters
+    charset = set(host_path + container_path)
+    if any(c in charset for c in r",\\:"):
+        raise ValueError("Illegal characters in path")
+    return f"{host_path}:{container_path}{':ro' if readonly else ''}"
 
 
 class StyxSingularityError(Exception):
@@ -52,7 +51,11 @@ class _SingularityExecution(Execution):
     """Singularity execution."""
 
     def __init__(
-        self, logger: logging.Logger, output_dir: pathlib.Path, metadata: Metadata
+        self,
+        logger: logging.Logger,
+        output_dir: pathlib.Path,
+        metadata: Metadata,
+        container_image: pl.Path,
     ) -> None:
         """Create SingularityExecution."""
         self.logger: logging.Logger = logger
@@ -62,6 +65,7 @@ class _SingularityExecution(Execution):
         self.output_file_next_id = 0
         self.output_dir = output_dir
         self.metadata = metadata
+        self.container_image = container_image
 
     def input_file(self, host_file: InputPathType) -> str:
         """Resolve input file."""
@@ -80,7 +84,7 @@ class _SingularityExecution(Execution):
         mounts: list[str] = []
 
         for i, (host_file, local_file) in enumerate(self.input_files):
-            mounts.append("--mount")
+            mounts.append("--bind")
             mounts.append(
                 _singularity_mount(
                     host_file.absolute().as_posix(), local_file, readonly=True
@@ -94,7 +98,9 @@ class _SingularityExecution(Execution):
         run_script = self.output_dir / "run.sh"
         # Ensure utf-8 encoding and unix newlines
         run_script.write_text(
-            f"#!/bin/bash\n{shlex.join(cargs)}\n", encoding="utf-8", newline="\n"
+            f"#!/bin/bash\ncd /styx_output\n{shlex.join(cargs)}\n",
+            encoding="utf-8",
+            newline="\n",
         )
 
         mounts.append("--mount")
@@ -105,22 +111,14 @@ class _SingularityExecution(Execution):
         )
 
         singularity_extra_args: list[str] = []
-        container = self.metadata.container_image_tag
-
-        if container is None:
-            raise ValueError("No container image tag specified in metadata")
 
         singularity_command = [
             "singularity",
-            "run",
-            "--rm",
-            "-w",
-            "/styx_output",
             *mounts,
-            "--entrypoint",
-            "/bin/bash",
             *singularity_extra_args,
-            container,
+            "exec",
+            self.container_image.as_posix(),
+            "/bin/bash",
             "./run.sh",
         ]
 
@@ -154,11 +152,20 @@ class SingularityRunner(Runner):
 
     logger_name = "styx_singularity_runner"
 
-    def __init__(self, data_dir: InputPathType | None = None) -> None:
-        """Create a new SingularityRunner."""
+    def __init__(
+        self, images: dict[str, str | pl.Path], data_dir: InputPathType | None = None
+    ) -> None:
+        """Create a new SingularityRunner.
+
+        images is a dictionary of container image tags to paths.
+        """
+        if os.name == "nt":
+            raise ValueError("SingularityRunner is not supported on Windows")
+
         self.data_dir = pathlib.Path(data_dir or "styx_tmp")
         self.uid = os.urandom(8).hex()
         self.execution_counter = 0
+        self.images = images
 
         # Configure logger
         self.logger = logging.getLogger(self.logger_name)
@@ -172,10 +179,21 @@ class SingularityRunner(Runner):
 
     def start_execution(self, metadata: Metadata) -> Execution:
         """Start execution."""
+        if metadata.container_image_tag is None:
+            raise ValueError("No container image tag specified in metadata")
+        if (container_path := self.images.get(metadata.container_image_tag)) is None:
+            raise ValueError(
+                f"Container image path not found: {metadata.container_image_tag}. "
+                f"Use `singularity pull docker://{metadata.container_image_tag} "
+                f"[output file]`  to download it and specify it in the `images` "
+                f"argument of the runner."
+            )
+
         self.execution_counter += 1
         return _SingularityExecution(
             logger=self.logger,
             output_dir=self.data_dir
             / f"{self.uid}_{self.execution_counter - 1}_{metadata.name}",
             metadata=metadata,
+            container_image=pl.Path(container_path),
         )
