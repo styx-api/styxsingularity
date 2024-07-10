@@ -105,7 +105,7 @@ class _SingularityExecution(Execution):
             newline="\n",
         )
 
-        mounts.append("--mount")
+        mounts.append("--bind")
         mounts.append(
             _singularity_mount(
                 self.output_dir.absolute().as_posix(), "/styx_output", readonly=False
@@ -116,12 +116,12 @@ class _SingularityExecution(Execution):
 
         singularity_command = [
             self.singularity_executable,
+            "exec",
             *mounts,
             *singularity_extra_args,
-            "exec",
             self.container_image.as_posix(),
             "/bin/bash",
-            "./run.sh",
+            "/styx_output/run.sh",
         ]
 
         self.logger.debug(f"Running singularity: {shlex.join(singularity_command)}")
