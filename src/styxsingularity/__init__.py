@@ -158,7 +158,7 @@ class SingularityRunner(Runner):
         self,
         images: dict[str, str | pl.Path],
         singularity_executable: str = "singularity",
-        data_dir: InputPathType | None = None
+        data_dir: InputPathType | None = None,
     ) -> None:
         """Create a new SingularityRunner.
 
@@ -202,4 +202,5 @@ class SingularityRunner(Runner):
             / f"{self.uid}_{self.execution_counter - 1}_{metadata.name}",
             metadata=metadata,
             container_image=pl.Path(container_path),
+            singularity_executable=self.singularity_executable,
         )
