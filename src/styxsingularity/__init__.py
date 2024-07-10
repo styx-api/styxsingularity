@@ -56,6 +56,7 @@ class _SingularityExecution(Execution):
         output_dir: pathlib.Path,
         metadata: Metadata,
         container_image: pl.Path,
+        singularity_executable: str,
     ) -> None:
         """Create SingularityExecution."""
         self.logger: logging.Logger = logger
@@ -66,6 +67,7 @@ class _SingularityExecution(Execution):
         self.output_dir = output_dir
         self.metadata = metadata
         self.container_image = container_image
+        self.singularity_executable = singularity_executable
 
     def input_file(self, host_file: InputPathType) -> str:
         """Resolve input file."""
@@ -113,7 +115,7 @@ class _SingularityExecution(Execution):
         singularity_extra_args: list[str] = []
 
         singularity_command = [
-            "singularity",
+            self.singularity_executable,
             *mounts,
             *singularity_extra_args,
             "exec",
@@ -153,7 +155,10 @@ class SingularityRunner(Runner):
     logger_name = "styx_singularity_runner"
 
     def __init__(
-        self, images: dict[str, str | pl.Path], data_dir: InputPathType | None = None
+        self,
+        images: dict[str, str | pl.Path],
+        singularity_executable: str = "singularity",
+        data_dir: InputPathType | None = None
     ) -> None:
         """Create a new SingularityRunner.
 
@@ -166,6 +171,7 @@ class SingularityRunner(Runner):
         self.uid = os.urandom(8).hex()
         self.execution_counter = 0
         self.images = images
+        self.singularity_executable = singularity_executable
 
         # Configure logger
         self.logger = logging.getLogger(self.logger_name)
