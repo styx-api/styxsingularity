@@ -8,6 +8,7 @@ import re
 import shlex
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from functools import partial
 from subprocess import PIPE, Popen
 
@@ -133,12 +134,15 @@ class _SingularityExecution(Execution):
         def _stderr_handler(line: str) -> None:
             self.logger.error(line)
 
+        time_start = datetime.now()
         with Popen(singularity_command, text=True, stdout=PIPE, stderr=PIPE) as process:
             with ThreadPoolExecutor(2) as pool:  # two threads to handle the streams
                 exhaust = partial(pool.submit, partial(deque, maxlen=0))
                 exhaust(_stdout_handler(line[:-1]) for line in process.stdout)  # type: ignore
                 exhaust(_stderr_handler(line[:-1]) for line in process.stderr)  # type: ignore
         return_code = process.poll()
+        time_end = datetime.now()
+        self.logger.info(f"Executed {self.metadata.name} in {time_end - time_start}")
         if return_code:
             raise StyxSingularityError(return_code, singularity_command, cargs)
 
