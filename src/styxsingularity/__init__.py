@@ -2,7 +2,6 @@
 
 import logging
 import os
-import pathlib
 import pathlib as pl
 import re
 import shlex
@@ -12,7 +11,14 @@ from datetime import datetime
 from functools import partial
 from subprocess import PIPE, Popen
 
-from styxdefs import Execution, InputPathType, Metadata, OutputPathType, Runner
+from styxdefs import (
+    Execution,
+    InputPathType,
+    Metadata,
+    OutputPathType,
+    Runner,
+    StyxRuntimeError,
+)
 
 
 def _singularity_mount(host_path: str, container_path: str, readonly: bool) -> str:
@@ -24,28 +30,23 @@ def _singularity_mount(host_path: str, container_path: str, readonly: bool) -> s
     return f"{host_path}:{container_path}{':ro' if readonly else ''}"
 
 
-class StyxSingularityError(Exception):
-    """Styx Singularity error."""
+class StyxSingularityError(StyxRuntimeError):
+    """Styx Singularity runtime error."""
 
     def __init__(
         self,
         return_code: int | None = None,
-        singularity_args: list[str] | None = None,
         command_args: list[str] | None = None,
+        singularity_args: list[str] | None = None,
     ) -> None:
         """Create StyxSingularityError."""
-        message = "Command failed."
-
-        if return_code is not None:
-            message += f"\n- Return code: {return_code}"
-
-        if singularity_args is not None:
-            message += f"\n- Singularity args: {shlex.join(singularity_args)}"
-
-        if command_args is not None:
-            message += f"\n- Command args: {shlex.join(command_args)}"
-
-        super().__init__(message)
+        super().__init__(
+            return_code=return_code,
+            command_args=command_args,
+            message_extra=f"- Singularity args: {shlex.join(singularity_args)}"
+            if singularity_args
+            else None,
+        )
 
 
 class _SingularityExecution(Execution):
@@ -54,7 +55,7 @@ class _SingularityExecution(Execution):
     def __init__(
         self,
         logger: logging.Logger,
-        output_dir: pathlib.Path,
+        output_dir: pl.Path,
         metadata: Metadata,
         container_image: pl.Path,
         singularity_executable: str,
@@ -171,7 +172,7 @@ class SingularityRunner(Runner):
         if os.name == "nt":
             raise ValueError("SingularityRunner is not supported on Windows")
 
-        self.data_dir = pathlib.Path(data_dir or "styx_tmp")
+        self.data_dir = pl.Path(data_dir or "styx_tmp")
         self.uid = os.urandom(8).hex()
         self.execution_counter = 0
         self.images = images
