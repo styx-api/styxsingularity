@@ -59,6 +59,7 @@ class _SingularityExecution(Execution):
         metadata: Metadata,
         container_image: pl.Path,
         singularity_executable: str,
+        environ: dict[str, str],
     ) -> None:
         """Create SingularityExecution."""
         self.logger: logging.Logger = logger
@@ -70,6 +71,7 @@ class _SingularityExecution(Execution):
         self.metadata = metadata
         self.container_image = container_image
         self.singularity_executable = singularity_executable
+        self.environ = environ
 
     def input_file(self, host_file: InputPathType) -> str:
         """Resolve input file."""
@@ -114,13 +116,15 @@ class _SingularityExecution(Execution):
             )
         )
 
-        singularity_extra_args: list[str] = []
+        environ_args_arg = ",".join(
+            [f"{key}={value}" for key, value in self.environ.items()]
+        )
 
         singularity_command = [
             self.singularity_executable,
             "exec",
             *mounts,
-            *singularity_extra_args,
+            *(["--env", environ_args_arg] if environ_args_arg else []),
             self.container_image.as_posix(),
             "/bin/bash",
             "/styx_output/run.sh",
@@ -164,6 +168,7 @@ class SingularityRunner(Runner):
         images: dict[str, str | pl.Path],
         singularity_executable: str = "singularity",
         data_dir: InputPathType | None = None,
+        environ: dict[str, str] | None = None,
     ) -> None:
         """Create a new SingularityRunner.
 
@@ -177,6 +182,7 @@ class SingularityRunner(Runner):
         self.execution_counter = 0
         self.images = images
         self.singularity_executable = singularity_executable
+        self.environ = environ or {}
 
         # Configure logger
         self.logger = logging.getLogger(self.logger_name)
@@ -208,4 +214,5 @@ class SingularityRunner(Runner):
             metadata=metadata,
             container_image=pl.Path(container_path),
             singularity_executable=self.singularity_executable,
+            environ=self.environ,
         )
