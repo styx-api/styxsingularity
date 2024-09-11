@@ -63,23 +63,32 @@ class _SingularityExecution(Execution):
     ) -> None:
         """Create SingularityExecution."""
         self.logger: logging.Logger = logger
-        self.input_files: list[tuple[pl.Path, str]] = []
+        self.input_mounts: list[tuple[pl.Path, str]] = []
         self.input_file_next_id = 0
-        self.output_files: list[tuple[pl.Path, str]] = []
-        self.output_file_next_id = 0
         self.output_dir = output_dir
         self.metadata = metadata
         self.container_image = container_image
         self.singularity_executable = singularity_executable
         self.environ = environ
 
-    def input_file(self, host_file: InputPathType) -> str:
+    def input_file(self, host_file: InputPathType, resolve_parent: bool = False) -> str:
         """Resolve input file."""
         _host_file = pl.Path(host_file)
-        local_file = f"/styx_input/{self.input_file_next_id}/{_host_file.name}"
+
+        if resolve_parent:
+            local_file = (
+                f"/styx_input/{self.input_file_next_id}/{_host_file.parent.name}"
+            )
+            resolved_file = f"{local_file}/{_host_file.name}"
+            self.input_mounts.append((_host_file.parent, local_file))
+        else:
+            resolved_file = local_file = (
+                f"/styx_input/{self.input_file_next_id}/{_host_file.name}"
+            )
+            self.input_mounts.append((_host_file, local_file))
+
         self.input_file_next_id += 1
-        self.input_files.append((_host_file, local_file))
-        return local_file
+        return resolved_file
 
     def output_file(self, local_file: str, optional: bool = False) -> OutputPathType:
         """Resolve output file."""
@@ -89,7 +98,7 @@ class _SingularityExecution(Execution):
         """Execute."""
         mounts: list[str] = []
 
-        for i, (host_file, local_file) in enumerate(self.input_files):
+        for host_file, local_file in self.input_mounts:
             mounts.append("--bind")
             mounts.append(
                 _singularity_mount(
