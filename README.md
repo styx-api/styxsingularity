@@ -39,7 +39,7 @@ set_global_runner(runner)
 
 ## Advanced Configuration
 
-The SingularityRunner class accepts several parameters for advanced configuration:
+The `SingularityRunner` class accepts several parameters for advanced configuration:
 
 - `images`: A dictionary mapping container image tags to their local paths
 - `singularity_executable`: Path to the Singularity executable (default: `"singularity"`)
@@ -63,11 +63,11 @@ runner = SingularityRunner(
 
 ## Contributing
 
-Contributions to styxdocker are welcome! Please refer to the [GitHub repository](https://github.com/childmindresearch/styxsingularity) for information on how to contribute, report issues, or submit pull requests.
+Contributions to `styxsingularity` are welcome! Please refer to the [GitHub repository](https://github.com/childmindresearch/styxsingularity) for information on how to contribute, report issues, or submit pull requests.
 
 ## License
 
-styxdocker is released under the MIT License. See the LICENSE file for details.
+`styxsingularity` is released under the MIT License. See the LICENSE file for details.
 
 ## Documentation
 
