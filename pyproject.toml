@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "styxsingularity"
 version = "0.1.0"
-description = "Singularity/Apptainer runner for Styx"
+description = "Singularity/Apptainer integration for Styx compiled wrappers"
 authors = ["Florian Rupprecht <33600480+nx10@users.noreply.github.com>"]
 license = "MIT License"
 readme = "README.md"
