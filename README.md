@@ -86,8 +86,8 @@ If you encounter any issues or have questions, please open an issue on the [GitH
 
 While [`styxdocker`](https://github.com/childmindresearch/styxdocker) and [`styxsingularity`](https://github.com/childmindresearch/styxsingularity) serve similar purposes, they have some key differences:
 
-- Container Technology: `styxdocker` uses Docker, while styxsingularity uses Singularity/Apptainer.
-- Platform Support: `styxdocker` works on Windows, Linux, and macOS, whereas styxsingularity is not supported on Windows.
+- Container Technology: `styxdocker` uses Docker, while `styxsingularity` uses Singularity/Apptainer.
+- Platform Support: `styxdocker` works on Windows, Linux, and macOS, whereas `styxsingularity` is not supported on Windows.
 - User Permissions: `styxdocker` can run containers as the current user on POSIX systems, which can help with file permission issues.
 
 Choose the package that best fits your infrastructure and requirements.
