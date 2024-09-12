@@ -8,7 +8,7 @@ readme = "README.md"
 packages = [{include = "styxsingularity", from = "src"}]
 
 [tool.poetry.dependencies]
-python = "~3.11"
+python = ">=3.10"
 styxdefs = "^0.2.0"
 
 [tool.poetry.group.dev.dependencies]
