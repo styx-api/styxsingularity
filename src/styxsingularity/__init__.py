@@ -3,7 +3,6 @@
 import logging
 import os
 import pathlib as pl
-import re
 import shlex
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
@@ -161,12 +160,6 @@ class _SingularityExecution(Execution):
             raise StyxSingularityError(return_code, singularity_command, cargs)
 
 
-def _default_execution_output_dir(metadata: Metadata) -> pl.Path:
-    """Default output dir generator."""
-    filesafe_name = re.sub(r"\W+", "_", metadata.name)
-    return pl.Path(f"output_{filesafe_name}")
-
-
 class SingularityRunner(Runner):
     """Singularity runner."""
 
@@ -174,7 +167,7 @@ class SingularityRunner(Runner):
 
     def __init__(
         self,
-        images: dict[str, str | pl.Path],
+        images: dict[str, str | pl.Path] | None = None,
         singularity_executable: str = "singularity",
         data_dir: InputPathType | None = None,
         environ: dict[str, str] | None = None,
@@ -189,7 +182,7 @@ class SingularityRunner(Runner):
         self.data_dir = pl.Path(data_dir or "styx_tmp")
         self.uid = os.urandom(8).hex()
         self.execution_counter = 0
-        self.images = images
+        self.images = images or {}
         self.singularity_executable = singularity_executable
         self.environ = environ or {}
 
