@@ -62,7 +62,7 @@ class _SingularityExecution(Execution):
     ) -> None:
         """Create SingularityExecution."""
         self.logger: logging.Logger = logger
-        self.input_mounts: list[tuple[pl.Path, str]] = []
+        self.input_mounts: list[tuple[pl.Path, str, bool]] = []
         self.input_file_next_id = 0
         self.output_dir = output_dir
         self.metadata = metadata
@@ -70,7 +70,12 @@ class _SingularityExecution(Execution):
         self.singularity_executable = singularity_executable
         self.environ = environ
 
-    def input_file(self, host_file: InputPathType, resolve_parent: bool = False) -> str:
+    def input_file(
+        self,
+        host_file: InputPathType,
+        resolve_parent: bool = False,
+        mutable: bool = False,
+    ) -> str:
         """Resolve input file."""
         _host_file = pl.Path(host_file)
 
@@ -79,12 +84,12 @@ class _SingularityExecution(Execution):
                 f"/styx_input/{self.input_file_next_id}/{_host_file.parent.name}"
             )
             resolved_file = f"{local_file}/{_host_file.name}"
-            self.input_mounts.append((_host_file.parent, local_file))
+            self.input_mounts.append((_host_file.parent, local_file, mutable))
         else:
             resolved_file = local_file = (
                 f"/styx_input/{self.input_file_next_id}/{_host_file.name}"
             )
-            self.input_mounts.append((_host_file, local_file))
+            self.input_mounts.append((_host_file, local_file, mutable))
 
         self.input_file_next_id += 1
         return resolved_file
@@ -97,11 +102,11 @@ class _SingularityExecution(Execution):
         """Execute."""
         mounts: list[str] = []
 
-        for host_file, local_file in self.input_mounts:
+        for host_file, local_file, mutable in self.input_mounts:
             mounts.append("--bind")
             mounts.append(
                 _singularity_mount(
-                    host_file.absolute().as_posix(), local_file, readonly=True
+                    host_file.absolute().as_posix(), local_file, readonly=not mutable
                 )
             )
 
