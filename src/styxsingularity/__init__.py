@@ -4,6 +4,7 @@ import logging
 import os
 import pathlib as pl
 import shlex
+import typing
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -98,7 +99,12 @@ class _SingularityExecution(Execution):
         """Resolve output file."""
         return self.output_dir / local_file
 
-    def run(self, cargs: list[str]) -> None:
+    def run(
+        self,
+        cargs: list[str],
+        handle_stdout: typing.Callable[[str], None] | None = None,
+        handle_stderr: typing.Callable[[str], None] | None = None,
+    ) -> None:
         """Execute."""
         mounts: list[str] = []
 
@@ -146,11 +152,12 @@ class _SingularityExecution(Execution):
         self.logger.debug(f"Running singularity: {shlex.join(singularity_command)}")
         self.logger.debug(f"Running command: {shlex.join(cargs)}")
 
-        def _stdout_handler(line: str) -> None:
-            self.logger.info(line)
-
-        def _stderr_handler(line: str) -> None:
-            self.logger.error(line)
+        _stdout_handler = (
+            handle_stdout if handle_stdout else lambda line: self.logger.info(line)
+        )
+        _stderr_handler = (
+            handle_stderr if handle_stderr else lambda line: self.logger.error(line)
+        )
 
         time_start = datetime.now()
         with Popen(singularity_command, text=True, stdout=PIPE, stderr=PIPE) as process:

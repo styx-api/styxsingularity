@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "styxsingularity"
-version = "0.2.0"
+version = "0.3.0"
 description = "Singularity/Apptainer integration for Styx compiled wrappers"
 authors = ["Florian Rupprecht <33600480+nx10@users.noreply.github.com>"]
 license = "MIT License"
@@ -9,14 +9,14 @@ packages = [{include = "styxsingularity", from = "src"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10"
-styxdefs = "^0.3.0"
+styxdefs = "^0.4.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
 mypy = "^1.10.1"
 pre-commit = "^4.0.1"
-pytest-cov = "^5.0.0"
-ruff = "^0.6.4"
+pytest-cov = "^6.0.0"
+ruff = "^0.8.0"
 
 [tool.poetry.group.docs.dependencies]
 pdoc = "^15.0.0"
@@ -40,10 +40,7 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["ANN", "D", "E", "F", "I"]
-ignore = [
-  "ANN101",  # self should not be annotated.
-  "ANN102"  # cls should not be annotated.
-]
+ignore = []
 fixable = ["ALL"]
 unfixable = []
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
