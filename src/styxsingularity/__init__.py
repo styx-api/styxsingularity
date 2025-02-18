@@ -59,6 +59,7 @@ class _SingularityExecution(Execution):
         metadata: Metadata,
         container_image: pl.Path,
         singularity_executable: str,
+        singularity_extra_args: list[str],
         environ: dict[str, str],
     ) -> None:
         """Create SingularityExecution."""
@@ -69,6 +70,7 @@ class _SingularityExecution(Execution):
         self.metadata = metadata
         self.container_image = container_image
         self.singularity_executable = singularity_executable
+        self.singularity_extra_args = singularity_extra_args
         self.environ = environ
 
     def input_file(
@@ -98,6 +100,10 @@ class _SingularityExecution(Execution):
     def output_file(self, local_file: str, optional: bool = False) -> OutputPathType:
         """Resolve output file."""
         return self.output_dir / local_file
+
+    def params(self, params: dict) -> dict:
+        """No changes to params."""
+        return params
 
     def run(
         self,
@@ -142,6 +148,7 @@ class _SingularityExecution(Execution):
         singularity_command = [
             self.singularity_executable,
             "exec",
+            *self.singularity_extra_args,
             *mounts,
             *(["--env", environ_args_arg] if environ_args_arg else []),
             self.container_image.as_posix(),
@@ -167,7 +174,10 @@ class _SingularityExecution(Execution):
                 exhaust(_stderr_handler(line[:-1]) for line in process.stderr)  # type: ignore
         return_code = process.poll()
         time_end = datetime.now()
-        self.logger.info(f"Executed {self.metadata.name} in {time_end - time_start}")
+        self.logger.info(
+            f"Executed {self.metadata.package} {self.metadata.name} "
+            f"in {time_end - time_start}"
+        )
         if return_code:
             raise StyxSingularityError(return_code, singularity_command, cargs)
 
@@ -181,6 +191,7 @@ class SingularityRunner(Runner):
         self,
         images: dict[str, str | pl.Path] | None = None,
         singularity_executable: str = "singularity",
+        singularity_extra_args: list[str] | None = None,
         data_dir: InputPathType | None = None,
         environ: dict[str, str] | None = None,
     ) -> None:
@@ -196,6 +207,7 @@ class SingularityRunner(Runner):
         self.execution_counter = 0
         self.images = images or {}
         self.singularity_executable = singularity_executable
+        self.singularity_extra_args = singularity_extra_args or []
         self.environ = environ or {}
 
         # Configure logger
@@ -228,5 +240,6 @@ class SingularityRunner(Runner):
             metadata=metadata,
             container_image=pl.Path(container_path),
             singularity_executable=self.singularity_executable,
+            singularity_extra_args=self.singularity_extra_args,
             environ=self.environ,
         )
