@@ -7,7 +7,7 @@ authors = [
 ]
 requires-python = ">=3.10"
 readme = "README.md"
-license = "MIT License"
+license = "MIT"
 dependencies = ["styxdefs>=0.5.0,<0.6"]
 
 [dependency-groups]
