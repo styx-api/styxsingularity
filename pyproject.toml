@@ -1,33 +1,32 @@
-[tool.poetry]
+[project]
 name = "styxsingularity"
 version = "0.5.0"
 description = "Singularity/Apptainer integration for Styx compiled wrappers"
-authors = ["Florian Rupprecht <33600480+nx10@users.noreply.github.com>"]
-license = "MIT License"
+authors = [
+  { name = "Florian Rupprecht", email = "33600480+nx10@users.noreply.github.com" },
+]
+requires-python = ">=3.10"
 readme = "README.md"
-packages = [{include = "styxsingularity", from = "src"}]
+license = "MIT"
+dependencies = ["styxdefs>=0.5.0,<0.6"]
 
-[tool.poetry.dependencies]
-python = ">=3.10"
-styxdefs = "^0.5.0"
+[dependency-groups]
+dev = [
+  "pytest>=8.2.2,<9",
+  "mypy>=1.10.1,<2",
+  "pre-commit>=4.0.1,<5",
+  "pytest-cov>=6.0.0,<7",
+  "ruff>=0.9.6,<0.10",
+]
+docs = ["pdoc>=15.0.0,<16"]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.2.2"
-mypy = "^1.10.1"
-pre-commit = "^4.0.1"
-pytest-cov = "^6.0.0"
-ruff = "^0.9.6"
-
-[tool.poetry.group.docs.dependencies]
-pdoc = "^15.0.0"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
-pythonpath = [
-  "src"
-]
-testpaths = [
-  "tests"
-]
+pythonpath = ["src"]
+testpaths = ["tests"]
 
 [tool.mypy]
 ignore_missing_imports = true
@@ -56,7 +55,3 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
-
-[build-system]
-requires = ["poetry-core>=1.2.0"]
-build-backend = "poetry.core.masonry.api"
