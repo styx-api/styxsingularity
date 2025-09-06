@@ -1,11 +1,11 @@
 # Singularity/Apptainer Runner for Styx compiled wrappers
 
-[![Build](https://github.com/childmindresearch/styxsingularity/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/childmindresearch/styxsingularity/actions/workflows/test.yaml?query=branch%3Amain)
-[![codecov](https://codecov.io/gh/childmindresearch/styxsingularity/branch/main/graph/badge.svg?token=22HWWFWPW5)](https://codecov.io/gh/childmindresearch/styxsingularity)
+[![Build](https://github.com/styx-api/styxsingularity/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/styx-api/styxsingularity/actions/workflows/test.yaml?query=branch%3Amain)
+[![codecov](https://codecov.io/gh/styx-api/styxsingularity/branch/main/graph/badge.svg?token=22HWWFWPW5)](https://codecov.io/gh/styx-api/styxsingularity)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 ![stability-stable](https://img.shields.io/badge/stability-stable-green.svg)
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/childmindresearch/styxsingularity/blob/main/LICENSE)
-[![pages](https://img.shields.io/badge/api-docs-blue)](https://childmindresearch.github.io/styxsingularity)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/styx-api/styxsingularity/blob/main/LICENSE)
+[![pages](https://img.shields.io/badge/api-docs-blue)](https://styx-api.github.io/styxsingularity)
 
 `styxsingularity` is a Python package that provides Singularity/Apptainer integration for Styx compiled wrappers. It allows you to run Styx functions within Singularity containers, offering improved isolation and reproducibility for your workflows.
 
@@ -63,7 +63,7 @@ runner = SingularityRunner(
 
 ## Contributing
 
-Contributions to `styxsingularity` are welcome! Please refer to the [GitHub repository](https://github.com/childmindresearch/styxsingularity) for information on how to contribute, report issues, or submit pull requests.
+Contributions to `styxsingularity` are welcome! Please refer to the [GitHub repository](https://github.com/styx-api/styxsingularity) for information on how to contribute, report issues, or submit pull requests.
 
 ## License
 
@@ -71,20 +71,20 @@ Contributions to `styxsingularity` are welcome! Please refer to the [GitHub repo
 
 ## Documentation
 
-For detailed API documentation, please visit our [API Docs](https://childmindresearch.github.io/styxsingularity).
+For detailed API documentation, please visit our [API Docs](https://styx-api.github.io/styxsingularity).
 
 ## Support
 
-If you encounter any issues or have questions, please open an issue on the [GitHub repository](https://github.com/childmindresearch/styxsingularity).
+If you encounter any issues or have questions, please open an issue on the [GitHub repository](https://github.com/styx-api/styxsingularity).
 
 ## Requirements
 
 - Python 3.10+
 - Singularity or Apptainer installed and running on your system
 
-## Comparison with [`styxdocker`](https://github.com/childmindresearch/styxdocker)
+## Comparison with [`styxdocker`](https://github.com/styx-api/styxdocker)
 
-While [`styxdocker`](https://github.com/childmindresearch/styxdocker) and [`styxsingularity`](https://github.com/childmindresearch/styxsingularity) serve similar purposes, they have some key differences:
+While [`styxdocker`](https://github.com/styx-api/styxdocker) and [`styxsingularity`](https://github.com/styx-api/styxsingularity) serve similar purposes, they have some key differences:
 
 - Container Technology: `styxdocker` uses Docker, while `styxsingularity` uses Singularity/Apptainer.
 - Platform Support: `styxdocker` works on Windows, Linux, and macOS, whereas `styxsingularity` is not supported on Windows.

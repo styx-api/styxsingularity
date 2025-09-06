@@ -15,16 +15,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install poetry
-      run: pipx install poetry
-    - uses: actions/setup-python@v5
+
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v6
       with:
-        python-version-file: pyproject.toml
-        cache: poetry
+        enable-cache: true
+
     - name: Install dependencies and build
       run: |
-        poetry install
-        poetry build
+        uv sync --frozen --no-dev --no-install-project
+        uv build
 
     - name: Publish to PyPi
       id: pypi_publish
