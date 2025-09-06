@@ -21,14 +21,12 @@ jobs:
       id: run-tests
       run: >
         uv run --frozen pytest \
-        uv run --frozen pytest \
           --junitxml=pytest.xml \
           --cov-report=term-missing:skip-covered \
           --cov-report=xml:coverage.xml \
           --cov=src tests \
           --log-level=DEBUG \
           --verbose
-
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
