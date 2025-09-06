@@ -1,5 +1,4 @@
 [project]
-[project]
 name = "styxsingularity"
 version = "0.5.1"
 description = "Singularity/Apptainer integration for Styx compiled wrappers"
@@ -23,8 +22,6 @@ dev = [
 docs = ["pdoc>=15.0.0"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = ["tests"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 
