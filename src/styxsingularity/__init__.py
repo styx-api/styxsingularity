@@ -57,7 +57,7 @@ class _SingularityExecution(Execution):
         logger: logging.Logger,
         output_dir: pl.Path,
         metadata: Metadata,
-        container_image: pl.Path,
+        container_tag: str,
         singularity_executable: str,
         singularity_extra_args: list[str],
         environ: dict[str, str],
@@ -68,7 +68,7 @@ class _SingularityExecution(Execution):
         self.input_file_next_id = 0
         self.output_dir = output_dir
         self.metadata = metadata
-        self.container_image = container_image
+        self.container_tag = container_tag
         self.singularity_executable = singularity_executable
         self.singularity_extra_args = singularity_extra_args
         self.environ = environ
@@ -151,7 +151,7 @@ class _SingularityExecution(Execution):
             *self.singularity_extra_args,
             *mounts,
             *(["--env", environ_args_arg] if environ_args_arg else []),
-            self.container_image.as_posix(),
+            self.container_tag,
             "/bin/bash",
             "/styx_output/run.sh",
         ]
@@ -189,7 +189,7 @@ class SingularityRunner(Runner):
 
     def __init__(
         self,
-        images: dict[str, str | pl.Path] | None = None,
+        image_overrides: dict[str, str] | None = None,
         singularity_executable: str = "singularity",
         singularity_extra_args: list[str] | None = None,
         data_dir: InputPathType | None = None,
@@ -205,7 +205,7 @@ class SingularityRunner(Runner):
         self.data_dir = pl.Path(data_dir or "styx_tmp")
         self.uid = os.urandom(8).hex()
         self.execution_counter = 0
-        self.images = images or {}
+        self.image_overrides = image_overrides or {}
         self.singularity_executable = singularity_executable
         self.singularity_extra_args = singularity_extra_args or []
         self.environ = environ or {}
@@ -224,13 +224,11 @@ class SingularityRunner(Runner):
         """Start execution."""
         if metadata.container_image_tag is None:
             raise ValueError("No container image tag specified in metadata")
-        if (container_path := self.images.get(metadata.container_image_tag)) is None:
-            raise ValueError(
-                f"Container image path not found: {metadata.container_image_tag}. "
-                f"Use `singularity pull docker://{metadata.container_image_tag} "
-                f"[output file]`  to download it and specify it in the `images` "
-                f"argument of the runner."
-            )
+        container_tag = self.image_overrides.get(
+            metadata.container_image_tag, metadata.container_image_tag
+        )
+        if not container_tag.startswith("docker://"):
+            container_tag = f"docker://{container_tag}"
 
         self.execution_counter += 1
         return _SingularityExecution(
@@ -238,7 +236,7 @@ class SingularityRunner(Runner):
             output_dir=self.data_dir
             / f"{self.uid}_{self.execution_counter - 1}_{metadata.name}",
             metadata=metadata,
-            container_image=pl.Path(container_path),
+            container_tag=container_tag,
             singularity_executable=self.singularity_executable,
             singularity_extra_args=self.singularity_extra_args,
             environ=self.environ,
