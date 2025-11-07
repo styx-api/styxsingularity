@@ -23,13 +23,8 @@ pip install styxsingularity
 from styxdefs import set_global_runner
 from styxsingularity import SingularityRunner
 
-# Initialize the SingularityRunner with your container images
-runner = SingularityRunner(
-    images={
-        "ubuntu:20.04": "/path/to/ubuntu_20.04.sif",
-        "python:3.9": "/path/to/python_3.9.sif"
-    }
-)
+# Initialize the SingularityRunner
+runner = SingularityRunner()
 
 # Set the global runner for Styx
 set_global_runner(runner)
@@ -41,7 +36,7 @@ set_global_runner(runner)
 
 The `SingularityRunner` class accepts several parameters for advanced configuration:
 
-- `images`: A dictionary mapping container image tags to their local paths
+- `image_overrides`: A dictionary to override container image tags
 - `singularity_executable`: Path to the Singularity executable (default: `"singularity"`)
 - `data_dir`: Directory for temporary data storage
 - `environ`: Environment variables to set in the container
@@ -50,7 +45,7 @@ Example:
 
 ```python
 runner = SingularityRunner(
-    images={"ubuntu:20.04": "/path/to/ubuntu_20.04.sif"},
+    image_overrides={"python:3.9": "my-custom-python:3.9"},
     singularity_executable="/usr/local/bin/singularity",
     data_dir="/tmp/styx_data",
     environ={"PYTHONPATH": "/app/lib"}
