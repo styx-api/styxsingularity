@@ -22,7 +22,20 @@ from styxdefs import (
 
 
 def _singularity_mount(host_path: str, container_path: str, readonly: bool) -> str:
-    """Construct Singularity mount argument."""
+    """Construct Singularity mount argument.
+
+    Args:
+        host_path: Path on the host filesystem to mount.
+        container_path: Path inside the container where the host path will be mounted.
+        readonly: If True, mount as read-only; otherwise mount as read-write.
+
+    Returns:
+        Formatted mount string in the format "host:container[:ro]".
+
+    Raises:
+        ValueError: If host_path or container_path contains illegal characters
+            (comma, backslash, or colon).
+    """
     # Check for illegal characters
     charset = set(host_path + container_path)
     if any(c in charset for c in r",\\:"):
@@ -31,7 +44,10 @@ def _singularity_mount(host_path: str, container_path: str, readonly: bool) -> s
 
 
 class StyxSingularityError(StyxRuntimeError):
-    """Styx Singularity runtime error."""
+    """Styx Singularity runtime error.
+
+    Raised when a Singularity container execution fails.
+    """
 
     def __init__(
         self,
@@ -39,7 +55,14 @@ class StyxSingularityError(StyxRuntimeError):
         command_args: list[str] | None = None,
         singularity_args: list[str] | None = None,
     ) -> None:
-        """Create StyxSingularityError."""
+        """Create StyxSingularityError.
+
+        Args:
+            return_code: The exit code returned by the failed process.
+            command_args: The command arguments that were executed inside the container.
+            singularity_args: The Singularity-specific arguments used to run the
+                container.
+        """
         super().__init__(
             return_code=return_code,
             command_args=command_args,
@@ -50,7 +73,11 @@ class StyxSingularityError(StyxRuntimeError):
 
 
 class _SingularityExecution(Execution):
-    """Singularity execution."""
+    """Singularity execution context.
+
+    Manages the execution of a command within a Singularity container,
+    handling input/output file mounting and command execution.
+    """
 
     def __init__(
         self,
@@ -62,7 +89,17 @@ class _SingularityExecution(Execution):
         singularity_extra_args: list[str],
         environ: dict[str, str],
     ) -> None:
-        """Create SingularityExecution."""
+        """Create SingularityExecution.
+
+        Args:
+            logger: Logger instance for execution logging.
+            output_dir: Directory where output files will be written.
+            metadata: Metadata about the command being executed.
+            container_tag: Singularity container image tag (e.g., "docker://ubuntu:20.04").
+            singularity_executable: Path to the singularity executable.
+            singularity_extra_args: Additional arguments to pass to singularity.
+            environ: Environment variables to set in the container.
+        """
         self.logger: logging.Logger = logger
         self.input_mounts: list[tuple[pl.Path, str, bool]] = []
         self.input_file_next_id = 0
@@ -79,16 +116,42 @@ class _SingularityExecution(Execution):
         resolve_parent: bool = False,
         mutable: bool = False,
     ) -> str:
-        """Resolve input file."""
+        """Resolve input file path for container execution.
+
+        Registers a host file to be mounted in the container and returns
+        the path where it will be accessible inside the container.
+
+        Args:
+            host_file: Path to the input file on the host filesystem.
+            resolve_parent: If True, mount the parent directory instead of just
+                the file.
+            mutable: If True, mount as read-write; otherwise mount as read-only.
+
+        Returns:
+            Path where the file will be accessible inside the container
+                (e.g., "/styx_input/0/file.txt").
+
+        Raises:
+            FileNotFoundError: If the input file or parent directory doesn't exist.
+        """
         _host_file = pl.Path(host_file)
 
         if resolve_parent:
+            _host_file_parent = _host_file.parent
+            if not _host_file_parent.is_dir():
+                raise FileNotFoundError(
+                    f'Input folder not found: "{_host_file_parent}"'
+                )
+
             local_file = (
-                f"/styx_input/{self.input_file_next_id}/{_host_file.parent.name}"
+                f"/styx_input/{self.input_file_next_id}/{_host_file_parent.name}"
             )
             resolved_file = f"{local_file}/{_host_file.name}"
-            self.input_mounts.append((_host_file.parent, local_file, mutable))
+            self.input_mounts.append((_host_file_parent, local_file, mutable))
         else:
+            if not _host_file.exists():
+                raise FileNotFoundError(f'Input file not found: "{_host_file}"')
+
             resolved_file = local_file = (
                 f"/styx_input/{self.input_file_next_id}/{_host_file.name}"
             )
@@ -98,11 +161,27 @@ class _SingularityExecution(Execution):
         return resolved_file
 
     def output_file(self, local_file: str, optional: bool = False) -> OutputPathType:
-        """Resolve output file."""
+        """Resolve output file path.
+
+        Args:
+            local_file: Relative path of the output file within the output directory.
+            optional: If True, the file is optional and may not be created
+                (currently unused).
+
+        Returns:
+            Full path where the output file will be written on the host filesystem.
+        """
         return self.output_dir / local_file
 
     def params(self, params: dict) -> dict:
-        """No changes to params."""
+        """Pass through parameters unchanged.
+
+        Args:
+            params: Command parameters dictionary.
+
+        Returns:
+            The same parameters dictionary, unmodified.
+        """
         return params
 
     def run(
@@ -111,7 +190,21 @@ class _SingularityExecution(Execution):
         handle_stdout: typing.Callable[[str], None] | None = None,
         handle_stderr: typing.Callable[[str], None] | None = None,
     ) -> None:
-        """Execute."""
+        """Execute the command in a Singularity container.
+
+        Constructs the Singularity command with all necessary mounts and arguments,
+        executes it, and handles stdout/stderr streams.
+
+        Args:
+            cargs: Command and arguments to execute inside the container.
+            handle_stdout: Optional callback function to handle stdout lines.
+                If None, logs to info level.
+            handle_stderr: Optional callback function to handle stderr lines.
+                If None, logs to error level.
+
+        Raises:
+            StyxSingularityError: If the command execution fails (non-zero exit code).
+        """
         mounts: list[str] = []
 
         for host_file, local_file, mutable in self.input_mounts:
@@ -183,7 +276,13 @@ class _SingularityExecution(Execution):
 
 
 class SingularityRunner(Runner):
-    """Singularity runner."""
+    """Singularity container runner.
+
+    Executes commands within Singularity containers, managing container images,
+    file mounting, and execution environment.
+
+    This runner is not supported on Windows platforms.
+    """
 
     logger_name = "styx_singularity_runner"
 
@@ -197,7 +296,21 @@ class SingularityRunner(Runner):
     ) -> None:
         """Create a new SingularityRunner.
 
-        images is a dictionary of container image tags to paths.
+        Args:
+            image_overrides: Dictionary mapping container image tags to alternative
+                tags. Useful for using local or custom container images.
+            singularity_executable: Path to the singularity executable. Defaults to
+                "singularity" (assumes it's in PATH).
+            singularity_extra_args: Additional arguments to pass to all
+                singularity commands.
+                Defaults to ["--no-mount", "hostfs"] to prevent automatic host
+                filesystem mounting.
+            data_dir: Directory for temporary execution data and outputs.
+                Defaults to "styx_tmp" in the current directory.
+            environ: Environment variables to set in all container executions.
+
+        Raises:
+            ValueError: If running on Windows (Singularity is not supported on Windows).
         """
         if os.name == "nt":
             raise ValueError("SingularityRunner is not supported on Windows")
@@ -207,7 +320,7 @@ class SingularityRunner(Runner):
         self.execution_counter = 0
         self.image_overrides = image_overrides or {}
         self.singularity_executable = singularity_executable
-        self.singularity_extra_args = singularity_extra_args or []
+        self.singularity_extra_args = singularity_extra_args or ["--no-mount", "hostfs"]
         self.environ = environ or {}
 
         # Configure logger
@@ -221,7 +334,21 @@ class SingularityRunner(Runner):
             self.logger.addHandler(ch)
 
     def start_execution(self, metadata: Metadata) -> Execution:
-        """Start execution."""
+        """Start a new execution context.
+
+        Creates a new execution instance with a unique output directory
+        and configured container image.
+
+        Args:
+            metadata: Metadata describing the command to execute, including
+                the container image tag.
+
+        Returns:
+            Execution context for running commands in the container.
+
+        Raises:
+            ValueError: If metadata doesn't specify a container image tag.
+        """
         if metadata.container_image_tag is None:
             raise ValueError("No container image tag specified in metadata")
         container_tag = self.image_overrides.get(

@@ -1,6 +1,6 @@
 [project]
 name = "styxsingularity"
-version = "0.7.0"
+version = "0.7.1"
 description = "Singularity/Apptainer integration for Styx compiled wrappers"
 authors = [
   {name = "Florian Rupprecht", email = "33600480+nx10@users.noreply.github.com"}
@@ -16,7 +16,7 @@ dev = [
   "mypy>=1.18.2",
   "pre-commit>=4.4.0",
   "pytest-cov>=7.0.0",
-  "ruff>=0.14.5",
+  "ruff>=0.14.6",
   "deptry>=0.24.0"
 ]
 docs = ["pdoc>=15.0.0"]
